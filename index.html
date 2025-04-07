@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Firebase Profile Management</title>
+</head>
+<body>
+  <h1>👤 User Profile</h1>
+
+  <!-- Sign Up Form -->
+  <h2>Sign Up</h2>
+  <form id="signUpForm">
+    <input type="text" id="nameInput" placeholder="Full Name" required />
+    <input type="email" id="emailInput" placeholder="Email" required />
+    <input type="password" id="passwordInput" placeholder="Password" required />
+    <button type="submit">Sign Up</button>
+  </form>
+
+  <!-- Sign In Form -->
+  <h2>Sign In</h2>
+  <form id="signInForm">
+    <input type="email" id="signInEmailInput" placeholder="Email" required />
+    <input type="password" id="signInPasswordInput" placeholder="Password" required />
+    <button type="submit">Sign In</button>
+  </form>
+
+  <!-- Profile Info Form -->
+  <h2>Update Profile Info</h2>
+  <input type="text" id="nameField" placeholder="Name" />
+  <input type="text" id="bioField" placeholder="Bio" />
+  <input type="text" id="locationField" placeholder="Location" />
+  <input type="url" id="websiteField" placeholder="Website" />
+  <input type="date" id="birthdayField" placeholder="Birthday" />
+  <input type="text" id="twitterField" placeholder="Twitter Handle" />
+  <input type="text" id="linkedinField" placeholder="LinkedIn Username" />
+  <button id="saveProfileBtn">Save Profile</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDGtxxaD-YJiDETRMsJ9KFBrJllT4yJfKM",
+      authDomain: "menu-84f72.firebaseapp.com",
+      projectId: "menu-84f72",
+      storageBucket: "menu-84f72.appspot.com",
+      messagingSenderId: "844744583140",
+      appId: "1:844744583140:web:f6cef7cf517fd628c509f1",
+      measurementId: "G-933V98RZDH"
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("🔥 Script loaded");
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const signUpForm = document.getElementById("signUpForm");
+      const signInForm = document.getElementById("signInForm");
+      const saveProfileBtn = document.getElementById("saveProfileBtn");
+
+      // Sign Up
+      signUpForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const name = document.getElementById("nameInput").value;
+        const email = document.getElementById("emailInput").value;
+        const password = document.getElementById("passwordInput").value;
+
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+
+          // Save initial profile info
+          await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            email: user.email,
+            name: name
+          });
+
+          alert("User signed up successfully!");
+        } catch (error) {
+          alert(`Sign Up Failed: ${error.message}`);
+        }
+      });
+
+      // Sign In
+      signInForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = document.getElementById("signInEmailInput").value;
+        const password = document.getElementById("signInPasswordInput").value;
+
+        try {
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          alert("User signed in successfully!");
+        } catch (error) {
+          alert(`Sign In Failed: ${error.message}`);
+        }
+      });
+
+      // Save/Update Full Profile Info
+      saveProfileBtn.addEventListener("click", async () => {
+        const user = auth.currentUser;
+
+        if (user) {
+          const name = document.getElementById("nameField").value;
+          const bio = document.getElementById("bioField").value;
+          const location = document.getElementById("locationField").value;
+          const website = document.getElementById("websiteField").value;
+          const birthday = document.getElementById("birthdayField").value;
+          const twitter = document.getElementById("twitterField").value;
+          const linkedin = document.getElementById("linkedinField").value;
+
+          const profileData = {
+            name: name || null,
+            bio: bio || null,
+            location: location || null,
+            website: website || null,
+            birthday: birthday || null,
+            social: {
+              twitter: twitter || null,
+              linkedin: linkedin || null
+            }
+          };
+
+          try {
+            await setDoc(doc(db, "users", user.uid), profileData, { merge: true });
+            alert("Profile updated successfully!");
+          } catch (error) {
+            alert(`Error saving profile: ${error.message}`);
+          }
+        } else {
+          alert("You must be signed in to save your profile.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>
